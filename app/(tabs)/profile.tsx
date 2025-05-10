@@ -36,17 +36,26 @@ export default function ProfileScreen() {
           <ThemedText type="title" style={styles.title}>
             My Profile
           </ThemedText>
-          
+
           <ThemedView style={styles.infoContainer}>
             <ThemedText style={styles.label}>Username</ThemedText>
             <ThemedText style={styles.value}>{user?.username}</ThemedText>
           </ThemedView>
-          
+
           <ThemedView style={styles.infoContainer}>
             <ThemedText style={styles.label}>Email</ThemedText>
             <ThemedText style={styles.value}>{user?.email}</ThemedText>
           </ThemedView>
-          
+
+          <ThemedView style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push('/quiz-history')}
+            >
+              <ThemedText style={styles.actionButtonText}>Quiz History</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <ThemedText style={styles.logoutButtonText}>Logout</ThemedText>
           </TouchableOpacity>
@@ -101,6 +110,23 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  actionsContainer: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  actionButton: {
+    backgroundColor: '#2196F3',
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  actionButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
