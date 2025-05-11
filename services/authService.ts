@@ -3,7 +3,8 @@ import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
 // Get the API URL from environment variables
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000/api';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.63.64:3000/api';
+console.log('Using API URL:', API_URL);
 
 // Token storage keys
 const TOKEN_KEY = 'auth_token';

@@ -4,6 +4,8 @@ import { Stack, useLocalSearchParams, router } from 'expo-router';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { QuizGradeResponse, QuizQuestionResult } from '@/services/contentService';
 
 export default function QuizResultsScreen() {
@@ -15,6 +17,7 @@ export default function QuizResultsScreen() {
   const [results, setResults] = useState<QuizGradeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedQuestions, setExpandedQuestions] = useState<number[]>([]);
+  const colorScheme = useColorScheme() ?? 'light';
 
   useEffect(() => {
     // Parse the results from the URL parameter
@@ -57,10 +60,16 @@ export default function QuizResultsScreen() {
       />
       <ThemedView style={styles.container}>
         {loading ? (
-          <ActivityIndicator size="large" color="#2196F3" style={styles.loader} />
+          <ActivityIndicator size="large" color={Colors[colorScheme].tint} style={styles.loader} />
         ) : results ? (
           <>
-            <ThemedView style={styles.scoreCard}>
+            <ThemedView 
+              variant="surface"
+              style={[
+                styles.scoreCard,
+                { backgroundColor: Colors[colorScheme].tint }
+              ]}
+            >
               <ThemedText type="title" style={styles.scoreTitle}>
                 Your Score
               </ThemedText>
@@ -80,16 +89,23 @@ export default function QuizResultsScreen() {
               {results.results.map((result: QuizQuestionResult) => (
                 <ThemedView 
                   key={result.questionId} 
+                  variant="surface"
                   style={[
                     styles.resultItem,
                     result.isCorrect ? styles.correctItem : styles.incorrectItem
                   ]}
                 >
                   <TouchableOpacity
-                    style={styles.resultHeader}
+                    style={[
+                      styles.resultHeader,
+                      { backgroundColor: Colors[colorScheme].surfaceBackground }
+                    ]}
                     onPress={() => toggleQuestionExpand(result.questionId)}
                   >
-                    <ThemedText style={styles.resultStatus}>
+                    <ThemedText style={[
+                      styles.resultStatus,
+                      { color: result.isCorrect ? Colors[colorScheme].success : Colors[colorScheme].error }
+                    ]}>
                       {result.isCorrect ? '✓ Correct' : '✗ Incorrect'}
                     </ThemedText>
                     <ThemedText style={styles.expandButton}>
@@ -98,7 +114,13 @@ export default function QuizResultsScreen() {
                   </TouchableOpacity>
                   
                   {expandedQuestions.includes(result.questionId) && (
-                    <ThemedView style={styles.resultDetails}>
+                    <ThemedView 
+                      variant="surface"
+                      style={[
+                        styles.resultDetails,
+                        { borderTopColor: Colors[colorScheme].border }
+                      ]}
+                    >
                       <ThemedText style={styles.questionText}>
                         {result.question.questionText}
                       </ThemedText>
@@ -109,8 +131,14 @@ export default function QuizResultsScreen() {
                             key={option.key}
                             style={[
                               styles.optionItem,
-                              option.key === result.userAnswerKey && styles.userAnswerOption,
-                              option.key === result.question.correctOptionKey && styles.correctAnswerOption
+                              { 
+                                borderColor: Colors[colorScheme].border,
+                                backgroundColor: option.key === result.userAnswerKey
+                                  ? 'rgba(244, 67, 54, 0.1)'
+                                  : option.key === result.question.correctOptionKey
+                                    ? 'rgba(76, 175, 80, 0.1)'
+                                    : 'transparent'
+                              }
                             ]}
                           >
                             <ThemedText style={styles.optionKey}>{option.key}.</ThemedText>
@@ -119,7 +147,10 @@ export default function QuizResultsScreen() {
                         ))}
                       </ThemedView>
                       
-                      <ThemedView style={styles.explanationContainer}>
+                      <ThemedView style={[
+                        styles.explanationContainer,
+                        { backgroundColor: Colors[colorScheme].surfaceBackground }
+                      ]}>
                         <ThemedText style={styles.explanationTitle}>Explanation:</ThemedText>
                         <ThemedText style={styles.explanationText}>
                           {result.question.explanationText}
@@ -133,14 +164,14 @@ export default function QuizResultsScreen() {
             
             <ThemedView style={styles.footer}>
               <TouchableOpacity
-                style={styles.homeButton}
+                style={[styles.homeButton, { backgroundColor: Colors[colorScheme].tint }]}
                 onPress={handleGoHome}
               >
                 <ThemedText style={styles.homeButtonText}>Go to Home</ThemedText>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.anotherQuizButton}
+                style={[styles.anotherQuizButton, { backgroundColor: Colors[colorScheme].success }]}
                 onPress={handleTakeAnotherQuiz}
               >
                 <ThemedText style={styles.anotherQuizButtonText}>Take Another Quiz</ThemedText>
@@ -148,10 +179,16 @@ export default function QuizResultsScreen() {
             </ThemedView>
           </>
         ) : (
-          <ThemedView style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyText}>Results not found</ThemedText>
+          <ThemedView 
+            variant="surface"
+            style={[
+              styles.emptyContainer,
+              { borderColor: Colors[colorScheme].border }
+            ]}
+          >
+            <ThemedText variant="secondary" style={styles.emptyText}>Results not found</ThemedText>
             <TouchableOpacity 
-              style={styles.homeButton} 
+              style={[styles.homeButton, { backgroundColor: Colors[colorScheme].tint }]}
               onPress={handleGoHome}
             >
               <ThemedText style={styles.homeButtonText}>Go to Home</ThemedText>
@@ -176,7 +213,6 @@ const styles = StyleSheet.create({
   scoreCard: {
     padding: 24,
     borderRadius: 8,
-    backgroundColor: '#2196F3',
     alignItems: 'center',
     marginBottom: 24,
   },
@@ -218,7 +254,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#f5f5f5',
   },
   resultStatus: {
     fontWeight: 'bold',
@@ -229,7 +264,6 @@ const styles = StyleSheet.create({
   resultDetails: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
   },
   questionText: {
     fontSize: 16,
@@ -243,17 +277,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 4,
     marginBottom: 8,
-  },
-  userAnswerOption: {
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-    borderColor: '#F44336',
-  },
-  correctAnswerOption: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderColor: '#4CAF50',
   },
   optionKey: {
     fontWeight: 'bold',
@@ -264,7 +289,6 @@ const styles = StyleSheet.create({
   },
   explanationContainer: {
     padding: 12,
-    backgroundColor: 'rgba(33, 150, 243, 0.05)',
     borderRadius: 4,
   },
   explanationTitle: {
@@ -280,7 +304,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   homeButton: {
-    backgroundColor: '#2196F3',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 4,
@@ -293,7 +316,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   anotherQuizButton: {
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 4,
@@ -309,6 +331,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 20,
   },
   emptyText: {
     fontSize: 16,

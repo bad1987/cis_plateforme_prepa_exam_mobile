@@ -39,9 +39,9 @@ export default function QuestionDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ 
+      <Stack.Screen options={{
         title: 'Question Details',
-        headerShown: true 
+        headerShown: true
       }} />
       <ThemedView style={styles.container}>
         {loading ? (
@@ -52,36 +52,44 @@ export default function QuestionDetailScreen() {
               <ThemedText style={styles.questionMeta}>
                 Year: {question.year} | Difficulty: {question.difficultyLevel}
               </ThemedText>
-              
+
               <ThemedText style={styles.questionText}>
                 {question.questionText}
               </ThemedText>
-              
+
               <ThemedView style={styles.optionsContainer}>
                 <ThemedText style={styles.optionsTitle}>Options:</ThemedText>
-                {question.options.map((option) => (
-                  <ThemedView 
-                    key={option.key} 
-                    style={[
-                      styles.optionItem,
-                      showExplanation && option.key === question.correctOptionKey && styles.correctOption
-                    ]}
-                  >
-                    <ThemedText style={styles.optionKey}>{option.key}.</ThemedText>
-                    <ThemedText style={styles.optionText}>{option.text}</ThemedText>
+                {question.options && question.options.length > 0 ? (
+                  question.options.map((option) => (
+                    <ThemedView
+                      key={option.key}
+                      style={[
+                        styles.optionItem,
+                        showExplanation && option.key === question.correctOptionKey && styles.correctOption
+                      ]}
+                    >
+                      <ThemedText style={styles.optionKey}>{option.key}.</ThemedText>
+                      <ThemedText style={styles.optionText}>{option.text}</ThemedText>
+                    </ThemedView>
+                  ))
+                ) : (
+                  <ThemedView style={styles.noOptionsContainer}>
+                    <ThemedText style={styles.noOptionsText}>
+                      No options available for this question.
+                    </ThemedText>
                   </ThemedView>
-                ))}
+                )}
               </ThemedView>
-              
-              <TouchableOpacity 
-                style={styles.explanationButton} 
+
+              <TouchableOpacity
+                style={styles.explanationButton}
                 onPress={toggleExplanation}
               >
                 <ThemedText style={styles.explanationButtonText}>
                   {showExplanation ? 'Hide Explanation' : 'Show Explanation'}
                 </ThemedText>
               </TouchableOpacity>
-              
+
               {showExplanation && (
                 <ThemedView style={styles.explanationContainer}>
                   <ThemedText style={styles.explanationTitle}>Explanation:</ThemedText>
@@ -94,9 +102,9 @@ export default function QuestionDetailScreen() {
                 </ThemedView>
               )}
             </ThemedView>
-            
-            <TouchableOpacity 
-              style={styles.backButton} 
+
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={() => router.back()}
             >
               <ThemedText style={styles.backButtonText}>Back to Questions</ThemedText>
@@ -105,8 +113,8 @@ export default function QuestionDetailScreen() {
         ) : (
           <ThemedView style={styles.emptyContainer}>
             <ThemedText style={styles.emptyText}>Question not found</ThemedText>
-            <TouchableOpacity 
-              style={styles.backButton} 
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={() => router.back()}
             >
               <ThemedText style={styles.backButtonText}>Back</ThemedText>
@@ -229,5 +237,15 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     marginBottom: 16,
+  },
+  noOptionsContainer: {
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  noOptionsText: {
+    fontSize: 16,
+    color: '#666',
   },
 });

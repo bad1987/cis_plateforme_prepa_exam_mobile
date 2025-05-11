@@ -4,6 +4,8 @@ import { Stack, useLocalSearchParams, router } from 'expo-router';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import contentService, { Question, QuizAnswer } from '@/services/contentService';
 
 export default function QuizScreen() {
@@ -18,6 +20,7 @@ export default function QuizScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0); // Time in seconds
   const [timerActive, setTimerActive] = useState(false);
+  const colorScheme = useColorScheme() ?? 'light';
 
   useEffect(() => {
     // Parse the questions from the URL parameter
@@ -55,7 +58,7 @@ export default function QuizScreen() {
 
   // Timer effect
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (timerActive && timeLeft > 0) {
       interval = setInterval(() => {
@@ -179,14 +182,23 @@ export default function QuizScreen() {
           <>
             <ThemedView style={styles.header}>
               <ThemedView style={styles.progressContainer}>
-                <ThemedText style={styles.progressText}>
+                <ThemedText variant="secondary" style={styles.progressText}>
                   Question {currentQuestionIndex + 1} of {questions.length}
                 </ThemedText>
-                <ThemedView style={styles.progressBar}>
+                <ThemedView 
+                  variant="surface"
+                  style={[
+                    styles.progressBar,
+                    { backgroundColor: Colors[colorScheme].surfaceBackground }
+                  ]}
+                >
                   <ThemedView
                     style={[
                       styles.progressFill,
-                      { width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }
+                      { 
+                        width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`,
+                        backgroundColor: Colors[colorScheme].success
+                      }
                     ]}
                   />
                 </ThemedView>
@@ -195,7 +207,7 @@ export default function QuizScreen() {
               <ThemedView style={styles.timerContainer}>
                 <ThemedText style={[
                   styles.timerText,
-                  timeLeft < 60 && styles.timerWarning
+                  timeLeft < 60 && { color: Colors[colorScheme].error }
                 ]}>
                   Time: {formatTime(timeLeft)}
                 </ThemedText>
@@ -203,7 +215,13 @@ export default function QuizScreen() {
             </ThemedView>
 
             <ScrollView style={styles.scrollContainer}>
-              <ThemedView style={styles.questionCard}>
+              <ThemedView 
+                variant="surface"
+                style={[
+                  styles.questionCard,
+                  { borderColor: Colors[colorScheme].border }
+                ]}
+              >
                 <ThemedText style={styles.questionText}>
                   {currentQuestion.questionText}
                 </ThemedText>
@@ -215,7 +233,12 @@ export default function QuizScreen() {
                         key={option.key}
                         style={[
                           styles.optionItem,
-                          currentAnswer?.userAnswerKey === option.key && styles.selectedOption
+                          { 
+                            borderColor: Colors[colorScheme].border,
+                            backgroundColor: currentAnswer?.userAnswerKey === option.key 
+                              ? Colors[colorScheme].surfacePressed
+                              : 'transparent'
+                          }
                         ]}
                         onPress={() => handleSelectAnswer(currentQuestion.id, option.key)}
                         disabled={submitting}
@@ -225,8 +248,14 @@ export default function QuizScreen() {
                       </TouchableOpacity>
                     ))
                   ) : (
-                    <ThemedView style={styles.noOptionsContainer}>
-                      <ThemedText style={styles.noOptionsText}>
+                    <ThemedView 
+                      variant="surface"
+                      style={[
+                        styles.noOptionsContainer,
+                        { backgroundColor: Colors[colorScheme].surfaceBackground }
+                      ]}
+                    >
+                      <ThemedText variant="secondary" style={styles.noOptionsText}>
                         No options available for this question.
                       </ThemedText>
                     </ThemedView>
@@ -237,7 +266,11 @@ export default function QuizScreen() {
 
             <ThemedView style={styles.footer}>
               <TouchableOpacity
-                style={[styles.navButton, currentQuestionIndex === 0 && styles.disabledButton]}
+                style={[
+                  styles.navButton,
+                  { backgroundColor: Colors[colorScheme].tint },
+                  currentQuestionIndex === 0 && styles.disabledButton
+                ]}
                 onPress={handlePreviousQuestion}
                 disabled={currentQuestionIndex === 0 || submitting}
               >
@@ -246,7 +279,11 @@ export default function QuizScreen() {
 
               {currentQuestionIndex === questions.length - 1 ? (
                 <TouchableOpacity
-                  style={[styles.submitButton, submitting && styles.disabledButton]}
+                  style={[
+                    styles.submitButton,
+                    { backgroundColor: Colors[colorScheme].success },
+                    submitting && styles.disabledButton
+                  ]}
                   onPress={handleSubmitQuiz}
                   disabled={submitting}
                 >
@@ -258,7 +295,10 @@ export default function QuizScreen() {
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  style={styles.navButton}
+                  style={[
+                    styles.navButton,
+                    { backgroundColor: Colors[colorScheme].tint }
+                  ]}
                   onPress={handleNextQuestion}
                   disabled={submitting}
                 >
@@ -268,7 +308,7 @@ export default function QuizScreen() {
             </ThemedView>
           </>
         ) : (
-          <ActivityIndicator size="large" color="#2196F3" style={styles.loader} />
+          <ActivityIndicator size="large" color={Colors[colorScheme].tint} style={styles.loader} />
         )}
       </ThemedView>
     </>
@@ -297,13 +337,11 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#e0e0e0',
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#4CAF50',
   },
   timerContainer: {
     alignItems: 'flex-end',
@@ -312,20 +350,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  timerWarning: {
-    color: '#F44336',
-  },
   scrollContainer: {
     flex: 1,
   },
   questionCard: {
     padding: 16,
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
     marginBottom: 16,
   },
   questionText: {
@@ -340,13 +371,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 4,
     marginBottom: 8,
-  },
-  selectedOption: {
-    backgroundColor: 'rgba(33, 150, 243, 0.1)',
-    borderColor: '#2196F3',
   },
   optionKey: {
     fontWeight: 'bold',
@@ -361,7 +387,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   navButton: {
-    backgroundColor: '#2196F3',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 4,
@@ -373,7 +398,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   submitButton: {
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 4,
@@ -389,12 +413,10 @@ const styles = StyleSheet.create({
   },
   noOptionsContainer: {
     padding: 16,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     alignItems: 'center',
   },
   noOptionsText: {
     fontSize: 16,
-    color: '#666',
   },
 });

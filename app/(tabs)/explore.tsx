@@ -6,6 +6,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Collapsible } from '@/components/Collapsible';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import contentService, { Subject } from '@/services/contentService';
 
 // Study tips data
@@ -40,6 +42,7 @@ const studyTips = [
 export default function ResourcesScreen() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
+  const colorScheme = useColorScheme() ?? 'light';
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -66,90 +69,108 @@ export default function ResourcesScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Study Resources', headerShown: true }} />
-      <ScrollView style={styles.container}>
-        <ThemedView style={styles.section}>
-          <ThemedText type="title" style={styles.sectionTitle}>
-            Study Resources
-          </ThemedText>
-          <ThemedText style={styles.sectionDescription}>
-            Explore study materials, tips, and resources to help you prepare for your exams.
-          </ThemedText>
-        </ThemedView>
+      <ScrollView>
+        <ThemedView style={styles.container}>
+          <ThemedView style={styles.section}>
+            <ThemedText type="title" style={styles.sectionTitle}>
+              Study Resources
+            </ThemedText>
+            <ThemedText variant="secondary" style={styles.sectionDescription}>
+              Explore study materials, tips, and resources to help you prepare for your exams.
+            </ThemedText>
+          </ThemedView>
 
-        {/* Study Tips Section */}
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.subSectionTitle}>
-            Effective Study Techniques
-          </ThemedText>
+          {/* Study Tips Section */}
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle" style={styles.subSectionTitle}>
+              Effective Study Techniques
+            </ThemedText>
 
-          {studyTips.map(tip => (
-            <Collapsible key={tip.id} title={tip.title}>
-              <ThemedText style={styles.tipContent}>
-                {tip.content}
-              </ThemedText>
-            </Collapsible>
-          ))}
-        </ThemedView>
+            {studyTips.map(tip => (
+              <Collapsible key={tip.id} title={tip.title}>
+                <ThemedText variant="secondary" style={styles.tipContent}>
+                  {tip.content}
+                </ThemedText>
+              </Collapsible>
+            ))}
+          </ThemedView>
 
-        {/* Subject Resources */}
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.subSectionTitle}>
-            Subject Resources
-          </ThemedText>
+          {/* Subject Resources */}
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle" style={styles.subSectionTitle}>
+              Subject Resources
+            </ThemedText>
 
-          {subjects.length > 0 ? (
-            subjects.map(subject => (
-              <ThemedView key={subject.id} style={styles.subjectItem}>
-                <ThemedText style={styles.subjectName}>{subject.name}</ThemedText>
-                <ThemedView style={styles.resourceButtons}>
-                  <TouchableOpacity
-                    style={styles.resourceButton}
-                    onPress={() => router.push({
-                      pathname: '/subjects/[subjectId]/notes' as any,
-                      params: { subjectId: subject.id }
-                    })}
-                  >
-                    <IconSymbol size={20} name="doc.text" color="#fff" />
-                    <ThemedText style={styles.resourceButtonText}>Notes</ThemedText>
-                  </TouchableOpacity>
+            {subjects.length > 0 ? (
+              subjects.map(subject => (
+                <ThemedView 
+                  key={subject.id} 
+                  variant="surface"
+                  style={[
+                    styles.subjectItem,
+                    { borderColor: Colors[colorScheme].border }
+                  ]}
+                >
+                  <ThemedText style={styles.subjectName}>{subject.name}</ThemedText>
+                  <ThemedView style={styles.resourceButtons}>
+                    <TouchableOpacity
+                      style={[styles.resourceButton, { backgroundColor: Colors[colorScheme].tint }]}
+                      onPress={() => router.push({
+                        pathname: '/subjects/[subjectId]/notes' as any,
+                        params: { subjectId: subject.id }
+                      })}
+                    >
+                      <IconSymbol size={20} name="doc.text" color={Colors[colorScheme === 'dark' ? 'dark' : 'light'].background} />
+                      <ThemedText style={styles.resourceButtonText}>Notes</ThemedText>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.resourceButton}
-                    onPress={() => router.push({
-                      pathname: '/subjects/[subjectId]/questions' as any,
-                      params: { subjectId: subject.id }
-                    })}
-                  >
-                    <IconSymbol size={20} name="questionmark.circle" color="#fff" />
-                    <ThemedText style={styles.resourceButtonText}>Questions</ThemedText>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.resourceButton, { backgroundColor: Colors[colorScheme].tint }]}
+                      onPress={() => router.push({
+                        pathname: '/subjects/[subjectId]/questions' as any,
+                        params: { subjectId: subject.id }
+                      })}
+                    >
+                      <IconSymbol size={20} name="questionmark.circle" color={Colors[colorScheme === 'dark' ? 'dark' : 'light'].background} />
+                      <ThemedText style={styles.resourceButtonText}>Questions</ThemedText>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.resourceButton, styles.quizButton]}
-                    onPress={() => router.push({
-                      pathname: '/quizzes/setup' as any,
-                      params: { subjectId: subject.id }
-                    })}
-                  >
-                    <IconSymbol size={20} name="pencil.and.scribble" color="#fff" />
-                    <ThemedText style={styles.resourceButtonText}>Quiz</ThemedText>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.resourceButton,
+                        { backgroundColor: Colors[colorScheme].success }
+                      ]}
+                      onPress={() => router.push({
+                        pathname: '/quizzes/setup' as any,
+                        params: { subjectId: subject.id }
+                      })}
+                    >
+                      <IconSymbol size={20} name="pencil.and.scribble" color={Colors[colorScheme === 'dark' ? 'dark' : 'light'].background} />
+                      <ThemedText style={styles.resourceButtonText}>Quiz</ThemedText>
+                    </TouchableOpacity>
+                  </ThemedView>
                 </ThemedView>
-              </ThemedView>
-            ))
-          ) : (
-            <ThemedView style={styles.emptyState}>
-              <ThemedText style={styles.emptyStateText}>
-                No subjects available. Check the Exams tab to browse available subjects.
-              </ThemedText>
-              <TouchableOpacity
-                style={styles.browseButton}
-                onPress={() => router.push('/(tabs)/exams')}
+              ))
+            ) : (
+              <ThemedView 
+                variant="surface"
+                style={[
+                  styles.emptyState,
+                  { borderColor: Colors[colorScheme].border }
+                ]}
               >
-                <ThemedText style={styles.browseButtonText}>Browse Exams</ThemedText>
-              </TouchableOpacity>
-            </ThemedView>
-          )}
+                <ThemedText variant="secondary" style={styles.emptyStateText}>
+                  No subjects available. Check the Exams tab to browse available subjects.
+                </ThemedText>
+                <TouchableOpacity
+                  style={[styles.browseButton, { backgroundColor: Colors[colorScheme].tint }]}
+                  onPress={() => router.push('/(tabs)/exams')}
+                >
+                  <ThemedText style={styles.browseButtonText}>Browse Exams</ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
+            )}
+          </ThemedView>
         </ThemedView>
       </ScrollView>
     </>
@@ -162,79 +183,101 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   sectionDescription: {
     fontSize: 16,
+    lineHeight: 24,
     opacity: 0.7,
-    marginBottom: 16,
+    marginBottom: 24,
   },
   subSectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    paddingTop: 8,
+  },
+  tipContent: {
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  subjectItem: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  subjectName: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  tipContent: {
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  subjectItem: {
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  subjectName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
   resourceButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginHorizontal: -4,
   },
   resourceButton: {
-    backgroundColor: '#2196F3',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
     marginHorizontal: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   quizButton: {
-    backgroundColor: '#4CAF50',
+    // Removed the backgroundColor from here since it's applied dynamically
   },
   resourceButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    marginLeft: 6,
+    marginLeft: 8,
+    fontSize: 15,
   },
   emptyState: {
-    padding: 24,
+    padding: 32,
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   emptyStateText: {
-    marginBottom: 16,
+    fontSize: 16,
+    marginBottom: 20,
     textAlign: 'center',
+    lineHeight: 24,
   },
   browseButton: {
-    backgroundColor: '#2196F3',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
     borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   browseButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 });

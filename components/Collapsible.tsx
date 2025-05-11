@@ -1,45 +1,96 @@
-import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-
+import React, { useState } from 'react';
+import { StyleSheet, TouchableOpacity, LayoutAnimation, Pressable } from 'react-native';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const theme = useColorScheme() ?? 'light';
+interface CollapsibleProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+export function Collapsible({ title, children }: CollapsibleProps) {
+  const [expanded, setExpanded] = useState(false);
+  const colorScheme = useColorScheme() ?? 'light';
+
+  const toggleExpand = () => {
+    LayoutAnimation.configureNext({
+      duration: 200,
+      create: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+      update: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+      },
+      delete: {
+        type: LayoutAnimation.Types.easeInEaseOut,
+        property: LayoutAnimation.Properties.opacity,
+      },
+    });
+    setExpanded(!expanded);
+  };
 
   return (
-    <ThemedView>
-      <TouchableOpacity
-        style={styles.heading}
-        onPress={() => setIsOpen((value) => !value)}
-        activeOpacity={0.8}>
-        <IconSymbol
-          name="chevron.right"
-          size={18}
-          weight="medium"
-          color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
-          style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
+    <ThemedView 
+      variant="surface"
+      style={[
+        styles.container,
+        { borderColor: Colors[colorScheme].border }
+      ]}
+    >
+      <Pressable 
+        style={({ pressed }) => [
+          styles.titleContainer,
+          expanded && [
+            styles.expandedTitleContainer,
+            { borderBottomColor: Colors[colorScheme].border }
+          ],
+          pressed && { backgroundColor: Colors[colorScheme].surfacePressed }
+        ]} 
+        onPress={toggleExpand}
+      >
+        <ThemedText style={styles.title}>{title}</ThemedText>
+        <IconSymbol 
+          size={20} 
+          name={expanded ? "chevron.up" : "chevron.down"} 
+          color={Colors[colorScheme].icon}
         />
-
-        <ThemedText type="defaultSemiBold">{title}</ThemedText>
-      </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
+      </Pressable>
+      
+      {expanded && (
+        <ThemedView style={styles.content}>
+          {children}
+        </ThemedView>
+      )}
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  heading: {
+  container: {
+    marginBottom: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  expandedTitleContainer: {
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
   },
   content: {
-    marginTop: 6,
-    marginLeft: 24,
+    padding: 16,
   },
 });

@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import contentService, { Exam, QuizSession } from '@/services/contentService';
 
 export default function HomeScreen() {
@@ -12,19 +14,29 @@ export default function HomeScreen() {
   const [recentQuizzes, setRecentQuizzes] = useState<QuizSession[]>([]);
   const [popularExams, setPopularExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
+  const colorScheme = useColorScheme() ?? 'light';
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        // Fetch recent quizzes
-        const quizHistory = await contentService.getQuizHistory();
-        setRecentQuizzes(quizHistory.slice(0, 3)); // Get only the 3 most recent
+        // Fetch exams first (this is not protected)
+        try {
+          const exams = await contentService.getExams();
+          setPopularExams(exams.slice(0, 3)); // Get only 3 exams for display
+        } catch (examError) {
+          console.error('Error fetching exams:', examError);
+        }
 
-        // Fetch exams
-        const exams = await contentService.getExams();
-        setPopularExams(exams.slice(0, 3)); // Get only 3 exams for display
+        // Try to fetch quiz history (this is protected and might fail if not authenticated)
+        try {
+          const quizHistory = await contentService.getQuizHistory();
+          setRecentQuizzes(quizHistory.slice(0, 3)); // Get only the 3 most recent
+        } catch (quizError) {
+          console.log('No quiz history available or not authenticated:', quizError);
+          // This is expected for new users or if not authenticated, so we just leave recentQuizzes as empty
+        }
       } catch (error) {
         console.error('Error fetching home data:', error);
       } finally {
@@ -47,116 +59,137 @@ export default function HomeScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Home', headerShown: true }} />
-      <ScrollView style={styles.container}>
-        {/* Welcome Section */}
-        <ThemedView style={styles.welcomeSection}>
-          <ThemedText type="title" style={styles.welcomeTitle}>
-            Welcome, {user?.username || 'Student'}!
-          </ThemedText>
-          <ThemedText style={styles.welcomeSubtitle}>
-            Continue your exam preparation journey
-          </ThemedText>
-        </ThemedView>
-
-        {/* Quick Actions */}
-        <ThemedView style={styles.actionsSection}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Quick Actions
-          </ThemedText>
-          <ThemedView style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/(tabs)/exams')}
-            >
-              <ThemedText style={styles.actionButtonText}>Browse Exams</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/quiz-history')}
-            >
-              <ThemedText style={styles.actionButtonText}>Quiz History</ThemedText>
-            </TouchableOpacity>
+      <ScrollView>
+        <ThemedView style={styles.container}>
+          {/* Welcome Section */}
+          <ThemedView style={styles.welcomeSection}>
+            <ThemedText type="title" style={styles.welcomeTitle}>
+              Welcome, {user?.username || 'Student'}!
+            </ThemedText>
+            <ThemedText variant="secondary" style={styles.welcomeSubtitle}>
+              Continue your exam preparation journey
+            </ThemedText>
           </ThemedView>
-        </ThemedView>
 
-        {/* Recent Quizzes */}
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Recent Quizzes
-          </ThemedText>
-          {recentQuizzes.length > 0 ? (
-            <ThemedView style={styles.quizList}>
-              {recentQuizzes.map((quiz) => (
-                <ThemedView key={quiz.id} style={styles.quizItem}>
-                  <ThemedText style={styles.quizSubject}>{quiz.subject.name}</ThemedText>
-                  <ThemedView style={styles.quizDetails}>
-                    <ThemedText style={styles.quizScore}>
-                      Score: {quiz.score}/{quiz.totalQuestions} ({calculatePercentage(quiz.score, quiz.totalQuestions)}%)
-                    </ThemedText>
-                    <ThemedText style={styles.quizDate}>
-                      {formatDate(quiz.endTime)}
-                    </ThemedText>
-                  </ThemedView>
-                </ThemedView>
-              ))}
+          {/* Quick Actions */}
+          <ThemedView style={styles.actionsSection}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Quick Actions
+            </ThemedText>
+            <ThemedView style={styles.actionButtons}>
               <TouchableOpacity
-                style={styles.viewAllButton}
+                style={[styles.actionButton, { backgroundColor: Colors[colorScheme].tint }]}
+                onPress={() => router.push('/(tabs)/exams')}
+              >
+                <ThemedText style={styles.actionButtonText}>Browse Exams</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: Colors[colorScheme].tint }]}
                 onPress={() => router.push('/quiz-history')}
               >
-                <ThemedText style={styles.viewAllButtonText}>View All Quizzes</ThemedText>
+                <ThemedText style={styles.actionButtonText}>Quiz History</ThemedText>
               </TouchableOpacity>
             </ThemedView>
-          ) : (
-            <ThemedView style={styles.emptyState}>
-              <ThemedText style={styles.emptyStateText}>
-                You haven't taken any quizzes yet.
-              </ThemedText>
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={() => router.push('/(tabs)/exams')}
-              >
-                <ThemedText style={styles.startButtonText}>Start a Quiz</ThemedText>
-              </TouchableOpacity>
-            </ThemedView>
-          )}
-        </ThemedView>
+          </ThemedView>
 
-        {/* Popular Exams */}
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Available Exams
-          </ThemedText>
-          {popularExams.length > 0 ? (
-            <ThemedView style={styles.examList}>
-              {popularExams.map((exam) => (
+          {/* Recent Quizzes */}
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Recent Quizzes
+            </ThemedText>
+            {recentQuizzes.length > 0 ? (
+              <ThemedView style={styles.quizList}>
+                {recentQuizzes.map((quiz) => (
+                  <ThemedView
+                    key={quiz.id}
+                    variant="surface"
+                    style={styles.quizItem}
+                  >
+                    <ThemedText style={styles.quizSubject}>{quiz.subject.name}</ThemedText>
+                    <ThemedView style={styles.quizDetails}>
+                      <ThemedText variant="secondary" style={styles.quizScore}>
+                        Score: {quiz.score}/{quiz.totalQuestions} ({calculatePercentage(quiz.score, quiz.totalQuestions)}%)
+                      </ThemedText>
+                      <ThemedText variant="secondary" style={styles.quizDate}>
+                        {formatDate(quiz.endTime)}
+                      </ThemedText>
+                    </ThemedView>
+                  </ThemedView>
+                ))}
                 <TouchableOpacity
-                  key={exam.id}
-                  style={styles.examItem}
-                  onPress={() => router.push({
-                    pathname: '/exams/[examId]/subjects' as any,
-                    params: { examId: exam.id }
-                  })}
+                  style={styles.viewAllButton}
+                  onPress={() => router.push('/quiz-history')}
                 >
-                  <ThemedText style={styles.examName}>{exam.name}</ThemedText>
-                  <ThemedText style={styles.examDescription} numberOfLines={2}>
-                    {exam.description}
+                  <ThemedText style={[styles.viewAllButtonText, { color: Colors[colorScheme].tint }]}>
+                    View All Quizzes
                   </ThemedText>
                 </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={styles.viewAllButton}
-                onPress={() => router.push('/(tabs)/exams')}
+              </ThemedView>
+            ) : (
+              <ThemedView
+                variant="surface"
+                style={styles.emptyState}
               >
-                <ThemedText style={styles.viewAllButtonText}>View All Exams</ThemedText>
-              </TouchableOpacity>
-            </ThemedView>
-          ) : (
-            <ThemedView style={styles.emptyState}>
-              <ThemedText style={styles.emptyStateText}>
-                No exams available at the moment.
-              </ThemedText>
-            </ThemedView>
-          )}
+                <ThemedText variant="secondary" style={styles.emptyStateText}>
+                  You haven't taken any quizzes yet.
+                </ThemedText>
+                <TouchableOpacity
+                  style={[styles.startButton, { backgroundColor: Colors[colorScheme].tint }]}
+                  onPress={() => router.push('/(tabs)/exams')}
+                >
+                  <ThemedText style={styles.startButtonText}>Start a Quiz</ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
+            )}
+          </ThemedView>
+
+          {/* Popular Exams */}
+          <ThemedView style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Available Exams
+            </ThemedText>
+            {popularExams.length > 0 ? (
+              <ThemedView style={styles.examList}>
+                {popularExams.map((exam) => (
+                  <TouchableOpacity
+                    key={exam.id}
+                    style={styles.examItem}
+                    onPress={() => router.push({
+                      pathname: '/exams/[examId]/subjects' as any,
+                      params: { examId: exam.id }
+                    })}
+                  >
+                    <ThemedView
+                      variant="surface"
+                      style={styles.examCard}
+                    >
+                      <ThemedText style={styles.examName}>{exam.name}</ThemedText>
+                      <ThemedText variant="secondary" style={styles.examDescription} numberOfLines={2}>
+                        {exam.description}
+                      </ThemedText>
+                    </ThemedView>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={styles.viewAllButton}
+                  onPress={() => router.push('/(tabs)/exams')}
+                >
+                  <ThemedText style={[styles.viewAllButtonText, { color: Colors[colorScheme].tint }]}>
+                    View All Exams
+                  </ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
+            ) : (
+              <ThemedView
+                variant="surface"
+                style={styles.emptyState}
+              >
+                <ThemedText variant="secondary" style={styles.emptyStateText}>
+                  No exams available at the moment.
+                </ThemedText>
+              </ThemedView>
+            )}
+          </ThemedView>
         </ThemedView>
       </ScrollView>
     </>
@@ -178,7 +211,6 @@ const styles = StyleSheet.create({
   },
   welcomeSubtitle: {
     fontSize: 16,
-    opacity: 0.7,
   },
   actionsSection: {
     marginBottom: 24,
@@ -193,7 +225,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   actionButton: {
-    backgroundColor: '#2196F3',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -213,7 +244,6 @@ const styles = StyleSheet.create({
   },
   quizItem: {
     padding: 16,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     marginBottom: 8,
   },
@@ -231,16 +261,16 @@ const styles = StyleSheet.create({
   },
   quizDate: {
     fontSize: 14,
-    opacity: 0.7,
   },
   examList: {
     marginBottom: 8,
   },
   examItem: {
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
     marginBottom: 8,
+  },
+  examCard: {
+    padding: 16,
+    borderRadius: 8,
   },
   examName: {
     fontSize: 16,
@@ -249,20 +279,17 @@ const styles = StyleSheet.create({
   },
   examDescription: {
     fontSize: 14,
-    opacity: 0.7,
   },
   viewAllButton: {
     alignItems: 'center',
     paddingVertical: 12,
   },
   viewAllButtonText: {
-    color: '#2196F3',
     fontWeight: 'bold',
   },
   emptyState: {
     padding: 24,
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
   emptyStateText: {
@@ -270,7 +297,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   startButton: {
-    backgroundColor: '#2196F3',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,

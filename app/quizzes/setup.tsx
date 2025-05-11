@@ -4,6 +4,8 @@ import { Stack, useLocalSearchParams, router } from 'expo-router';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import contentService, { Subject } from '@/services/contentService';
 
 export default function QuizSetupScreen() {
@@ -12,6 +14,7 @@ export default function QuizSetupScreen() {
   const [loading, setLoading] = useState(true);
   const [startingQuiz, setStartingQuiz] = useState(false);
   const [numberOfQuestions, setNumberOfQuestions] = useState('10');
+  const colorScheme = useColorScheme() ?? 'light';
 
   useEffect(() => {
     if (subjectId) {
@@ -43,30 +46,22 @@ export default function QuizSetupScreen() {
   };
 
   const handleStartQuiz = async () => {
-    if (!subjectId) {
-      Alert.alert('Error', 'Subject ID is required');
-      return;
-    }
+    if (!subject) return;
 
     const numQuestions = parseInt(numberOfQuestions);
-    if (isNaN(numQuestions) || numQuestions <= 0) {
+    if (isNaN(numQuestions) || numQuestions < 1) {
       Alert.alert('Error', 'Please enter a valid number of questions');
       return;
     }
 
     try {
       setStartingQuiz(true);
-      const quizData = await contentService.startQuiz({
-        subjectId: parseInt(subjectId),
-        numberOfQuestions: numQuestions
-      });
-
-      // Navigate to the quiz screen with the session data
+      const quizData = await contentService.setupQuiz(subject.id, numQuestions);
+      
       router.push({
         pathname: '/quizzes/[sessionId]' as any,
-        params: { 
-          sessionId: quizData.sessionId.toString(),
-          // Pass the questions as a stringified JSON to avoid URL length limitations
+        params: {
+          sessionId: quizData.sessionId,
           // In a real app, you might want to use a state management solution like Redux or Context
           questions: JSON.stringify(quizData.questions)
         }
@@ -89,30 +84,44 @@ export default function QuizSetupScreen() {
       }} />
       <ThemedView style={styles.container}>
         {loading ? (
-          <ActivityIndicator size="large" color="#2196F3" style={styles.loader} />
+          <ActivityIndicator size="large" color={Colors[colorScheme].tint} style={styles.loader} />
         ) : subject ? (
-          <ThemedView style={styles.setupCard}>
+          <ThemedView 
+            variant="surface"
+            style={[
+              styles.setupCard,
+              { borderColor: Colors[colorScheme].border }
+            ]}
+          >
             <ThemedText type="title" style={styles.title}>
               Start a Quiz
             </ThemedText>
             
-            <ThemedText style={styles.subjectName}>
+            <ThemedText variant="secondary" style={styles.subjectName}>
               Subject: {subject.name}
             </ThemedText>
             
             <ThemedView style={styles.inputContainer}>
-              <ThemedText style={styles.label}>Number of Questions:</ThemedText>
+              <ThemedText variant="secondary" style={styles.label}>Number of Questions:</ThemedText>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    color: Colors[colorScheme].text,
+                    backgroundColor: Colors[colorScheme].surfaceBackground,
+                    borderColor: Colors[colorScheme].border
+                  }
+                ]}
                 value={numberOfQuestions}
                 onChangeText={setNumberOfQuestions}
                 keyboardType="numeric"
                 placeholder="Enter number of questions"
+                placeholderTextColor={Colors[colorScheme].icon}
               />
             </ThemedView>
             
             <TouchableOpacity
-              style={styles.startButton}
+              style={[styles.startButton, { backgroundColor: Colors[colorScheme].success }]}
               onPress={handleStartQuiz}
               disabled={startingQuiz}
             >
@@ -124,18 +133,30 @@ export default function QuizSetupScreen() {
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.cancelButton} 
+              style={[
+                styles.cancelButton,
+                { 
+                  borderColor: Colors[colorScheme].border,
+                  backgroundColor: Colors[colorScheme].surfaceBackground
+                }
+              ]} 
               onPress={() => router.back()}
               disabled={startingQuiz}
             >
-              <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
+              <ThemedText variant="secondary" style={styles.cancelButtonText}>Cancel</ThemedText>
             </TouchableOpacity>
           </ThemedView>
         ) : (
-          <ThemedView style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyText}>Subject not found</ThemedText>
+          <ThemedView 
+            variant="surface"
+            style={[
+              styles.emptyContainer,
+              { borderColor: Colors[colorScheme].border }
+            ]}
+          >
+            <ThemedText variant="secondary" style={styles.emptyText}>Subject not found</ThemedText>
             <TouchableOpacity 
-              style={styles.backButton} 
+              style={[styles.backButton, { backgroundColor: Colors[colorScheme].tint }]}
               onPress={() => router.back()}
             >
               <ThemedText style={styles.backButtonText}>Back</ThemedText>
@@ -161,11 +182,12 @@ const styles = StyleSheet.create({
   setupCard: {
     padding: 24,
     borderRadius: 8,
+    borderWidth: 1,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
     alignItems: 'center',
   },
   title: {
@@ -190,14 +212,11 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: '#fff',
   },
   startButton: {
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -217,7 +236,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
   },
   cancelButtonText: {
     fontSize: 16,
@@ -226,13 +244,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 20,
   },
   emptyText: {
     fontSize: 16,
     marginBottom: 16,
   },
   backButton: {
-    backgroundColor: '#2196F3',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 4,

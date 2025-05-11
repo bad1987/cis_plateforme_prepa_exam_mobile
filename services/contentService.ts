@@ -3,7 +3,8 @@ import Constants from 'expo-constants';
 import authService from './authService';
 
 // Get the API URL from environment variables
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000/api';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://192.168.63.64:3000/api';
+console.log('Content Service using API URL:', API_URL);
 
 // Types
 export interface Exam {
@@ -199,6 +200,22 @@ const contentService = {
         throw new Error(error.response.data.message || 'Failed to start quiz');
       }
       throw new Error('Network error while starting quiz');
+    }
+  },
+
+  // Setup a quiz
+  setupQuiz: async (subjectId: number, numberOfQuestions: number = 10): Promise<QuizStartResponse> => {
+    try {
+      const response = await api.post('/quizzes/start', {
+        subjectId,
+        numberOfQuestions
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'Failed to setup quiz');
+      }
+      throw new Error('Network error while setting up quiz');
     }
   },
 

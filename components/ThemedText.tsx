@@ -1,11 +1,12 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
-
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  variant?: 'primary' | 'secondary' | 'link';
 };
 
 export function ThemedText({
@@ -13,14 +14,17 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = 'default',
+  variant = 'primary',
   ...rest
 }: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const colorScheme = useColorScheme() ?? 'light';
+  
+  const textColor = getTextColor(variant, colorScheme, lightColor, darkColor);
 
   return (
     <Text
       style={[
-        { color },
+        { color: textColor },
         type === 'default' ? styles.default : undefined,
         type === 'title' ? styles.title : undefined,
         type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
@@ -31,6 +35,27 @@ export function ThemedText({
       {...rest}
     />
   );
+}
+
+function getTextColor(
+  variant: 'primary' | 'secondary' | 'link',
+  colorScheme: 'light' | 'dark',
+  lightColor?: string,
+  darkColor?: string
+): string {
+  if (lightColor && darkColor) {
+    return colorScheme === 'dark' ? darkColor : lightColor;
+  }
+
+  if (variant === 'link') {
+    return Colors[colorScheme].tint;
+  }
+
+  if (variant === 'secondary') {
+    return colorScheme === 'dark' ? '#9BA1A6' : '#687076';
+  }
+
+  return Colors[colorScheme].text;
 }
 
 const styles = StyleSheet.create({
@@ -55,6 +80,5 @@ const styles = StyleSheet.create({
   link: {
     lineHeight: 30,
     fontSize: 16,
-    color: '#0a7ea4',
   },
 });
